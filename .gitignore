@@ -1,0 +1,43 @@
+# Node
+
+node_modules/
+npm-debug.log*
+
+# Python
+
+venv/
+.venv/
+python-ai/venv/
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment
+
+.env
+*.env
+
+# IDE
+
+.vscode/
+.idea/
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+logs/
+*.log
+
+# Build
+
+dist/
+build/
+
+# Coverage
+
+coverage/
