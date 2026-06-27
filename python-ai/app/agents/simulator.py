@@ -1,5 +1,6 @@
 from app.services.gemini_service import llm
 from app.schemas.simulator_schema import SimulatorSchema
+from app.utils.reasoning import add_reasoning
 
 structured_llm = llm.with_structured_output(
     SimulatorSchema
@@ -9,37 +10,51 @@ structured_llm = llm.with_structured_output(
 def simulator_agent(state):
 
     prompt = f"""
-    You are the Future Simulator Agent.
+You are ChronoGuard's Future Simulation Agent.
 
-    User Profile
+Your responsibility is to predict possible future outcomes.
 
-    {state["profile"]}
+User Profile:
+{state["profile"]}
 
-    Tasks
+Execution Plan:
+{state["plan"]}
 
-    {state["tasks"]}
+Risk Analysis:
+{state["risk"]}
 
-    Risk
+Generate three future scenarios.
 
-    {state["risk"]}
+Future A
+Current behaviour.
 
-    Simulate three futures.
+Future B
+Follow the AI recommendations.
 
-    Future A
+Future C
+Aggressive optimisation.
 
-    Current behavior
+Rules:
 
-    Future B
+- Be realistic.
+- Keep each future under 80 words.
+- Mention consequences.
+"""
 
-    AI optimized
+    result = structured_llm.invoke(prompt)
 
-    Future C
+    state["simulation"] = {
+        "future_a": result.future_a,
+        "future_b": result.future_b,
+        "future_c": result.future_c,
+    }
 
-    Aggressive optimization
-    """
-
-    simulation = structured_llm.invoke(prompt)
-
-    state["simulation"] = simulation.model_dump()
+    add_reasoning(
+        state,
+        agent="Future Simulator",
+        decision="Generated three future scenarios",
+        confidence=result.confidence,
+        reasoning=result.reasoning,
+    )
 
     return state

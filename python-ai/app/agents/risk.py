@@ -1,5 +1,6 @@
 from app.services.gemini_service import llm
 from app.schemas.risk_schema import RiskSchema
+from app.utils.reasoning import add_reasoning
 
 structured_llm = llm.with_structured_output(RiskSchema)
 
@@ -7,31 +8,62 @@ structured_llm = llm.with_structured_output(RiskSchema)
 def risk_agent(state):
 
     prompt = f"""
-    You are the Risk Prediction Agent.
+You are ChronoGuard's Risk Prediction Agent.
 
-    User Profile:
+Your responsibility is to evaluate whether the user's current plan is safe.
 
-    {state["profile"]}
+User Profile:
+{state["profile"]}
 
-    Planned Tasks:
+Planned Tasks:
+{state["plan"]}
 
-    {state["plan"]}
+Original Tasks:
+{state["tasks"]}
 
-    Original Tasks:
+Analyze and return:
 
-    {state["tasks"]}
+1. risk_score (0-100)
 
-    Calculate:
+2. completion_probability (0-100)
 
-    1. Deadline Risk (0-100)
-    2. Completion Probability (0-100)
-    3. Stress Score (0-100)
+3. stress_score (0-100)
 
-    Explain why.
-    """
+4. requires_simulation
+(True if future simulation would help)
 
-    risk = structured_llm.invoke(prompt)
+5. requires_negotiation
+(True if schedule changes are necessary)
 
-    state["risk"] = risk.model_dump()
+6. confidence (0-100)
+
+7. reason
+
+Be conservative.
+
+If the schedule looks risky,
+enable simulation.
+
+If the current schedule is unlikely to succeed,
+enable negotiation.
+"""
+
+    result = structured_llm.invoke(prompt)
+
+    state["risk"] = {
+        "risk_score": result.risk_score,
+        "completion_probability": result.completion_probability,
+        "stress_score": result.stress_score,
+        "requires_simulation": result.requires_simulation,
+        "requires_negotiation": result.requires_negotiation,
+    }
+
+    add_reasoning(
+        state,
+        agent="Risk Agent",
+        decision=f"Calculated Risk Score = {result.risk_score}",
+        confidence=result.confidence,
+        reasoning=result.reason,
+    )
 
     return state

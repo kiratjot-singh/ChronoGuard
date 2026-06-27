@@ -3,22 +3,22 @@ from typing import TypedDict, List, Dict
 
 class ChronoState(TypedDict):
 
+    user_id: str
+
     history: str
 
-    tasks: List[Dict]
+    tasks: list
 
-    calendar: List[Dict]
+    memory: dict
 
-    profile: Dict
+    profile: dict
 
-    plan: Dict
+    plan: dict
 
-    risk: Dict
+    risk: dict
 
-    schedule: Dict
+    simulation: dict
 
-    simulation: Dict
+    negotiation: dict
 
-    negotiation: Dict
-
-    reasoning: List[Dict]
+    reasoning: list

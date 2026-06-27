@@ -1,12 +1,9 @@
-def risk_router(state):
+from typing import Literal
 
-    risk = state["risk"]["risk_score"]
 
-    if risk >= 70:
-        return "high"
+def risk_router(state) -> Literal["low", "medium"]:
 
-    elif risk >= 40:
+    if state["risk"]["requires_simulation"]:
         return "medium"
 
-    else:
-        return "low"
+    return "low"

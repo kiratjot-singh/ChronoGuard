@@ -1,6 +1,6 @@
 from app.services.gemini_service import llm
 from app.schemas.digital_twin_schema import DigitalTwinSchema
-
+from app.utils.reasoning import add_reasoning
 
 structured_llm = llm.with_structured_output(
     DigitalTwinSchema
@@ -10,24 +10,42 @@ structured_llm = llm.with_structured_output(
 def digital_twin_agent(state):
 
     prompt = f"""
-    You are the Digital Twin Agent.
+You are ChronoGuard's Digital Twin Agent.
 
-    Analyze user productivity behavior.
+Your responsibility is to build a behavioural profile of the user based on their current history and historical memory statistics.
 
-    Determine:
+Historical Memory Profile:
+{state.get("memory", {})}
 
-    - focus score (0-100)
-    - procrastination score (0-100)
-    - completion rate (0-100)
-    - preferred work hours
+Current User History:
+{state["history"]}
 
-    User History:
+Analyze and determine:
+1. Focus score (0-100)
+2. Procrastination score (0-100)
+3. Completion rate (0-100)
+4. Preferred work hours
+5. Procrastination patterns (e.g. "morning procrastination", "gym avoidance")
 
-    {state["history"]}
-    """
+Think carefully before answering.
+"""
 
-    profile = structured_llm.invoke(prompt)
+    result = structured_llm.invoke(prompt)
 
-    state["profile"] = profile.model_dump()
+    state["profile"] = {
+        "focus_score": result.focus_score,
+        "procrastination_score": result.procrastination_score,
+        "completion_rate": result.completion_rate,
+        "preferred_work_hours": result.preferred_work_hours,
+        "procrastination_patterns": result.procrastination_patterns,
+    }
+
+    add_reasoning(
+        state,
+        agent="Digital Twin Agent",
+        decision="Generated user behavioural profile",
+        confidence=result.confidence,
+        reasoning=result.reasoning,
+    )
 
     return state

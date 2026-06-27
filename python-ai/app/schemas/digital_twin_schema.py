@@ -1,9 +1,18 @@
 from pydantic import BaseModel
-from typing import List
 
 
 class DigitalTwinSchema(BaseModel):
+
     focus_score: int
+
     procrastination_score: int
+
     completion_rate: int
-    preferred_work_hours: List[str]
+
+    preferred_work_hours: list[str]
+
+    procrastination_patterns: list[str]
+
+    confidence: int
+
+    reasoning: str
