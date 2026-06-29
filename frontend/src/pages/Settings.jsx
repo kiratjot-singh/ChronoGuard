@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Settings as SettingsIcon, 
@@ -11,23 +12,133 @@ import {
 const Settings = () => {
   const { user } = useAuth();
   
-  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(true);
-  const [gmailConnected, setGmailConnected] = useState(true);
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(() => {
+    return user?.googleConnected || false;
+  });
+  const [gmailConnected, setGmailConnected] = useState(() => {
+    return user?.googleConnected || false;
+  });
   
-  const [syncOnLoad, setSyncOnLoad] = useState(true);
-  const [emailAlerts, setEmailAlerts] = useState(false);
-  const [focusBufferMinutes, setFocusBufferMinutes] = useState(30);
+  const [syncOnLoad, setSyncOnLoad] = useState(() => {
+    return user?.syncOnLoad !== undefined ? user.syncOnLoad : true;
+  });
+  const [emailAlerts, setEmailAlerts] = useState(() => {
+    return user?.emailAlerts !== undefined ? user.emailAlerts : false;
+  });
+  const [focusBufferMinutes, setFocusBufferMinutes] = useState(() => {
+    return user?.focusBufferMinutes !== undefined ? user.focusBufferMinutes : 30;
+  });
+  const [highPriorityKeywords, setHighPriorityKeywords] = useState(() => {
+    return user?.highPriorityKeywords ? user.highPriorityKeywords.join(', ') : 'interview, internship, test, deadline, exam';
+  });
 
-  const handleToggleCalendar = () => {
-    setGoogleCalendarConnected(!googleCalendarConnected);
+  const [alertMsg, setAlertMsg] = useState(null);
+  const [alertType, setAlertType] = useState('success');
+
+  // Fetch connection state on mount and handle success/error params from OAuth callback redirect
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const response = await api.get('/auth/profile');
+        const dbUser = response.data.user;
+        if (dbUser) {
+          setGoogleCalendarConnected(dbUser.googleConnected || false);
+          setGmailConnected(dbUser.googleConnected || false);
+          setSyncOnLoad(dbUser.syncOnLoad !== undefined ? dbUser.syncOnLoad : true);
+          setEmailAlerts(dbUser.emailAlerts !== undefined ? dbUser.emailAlerts : false);
+          setFocusBufferMinutes(dbUser.focusBufferMinutes !== undefined ? dbUser.focusBufferMinutes : 30);
+          setHighPriorityKeywords(dbUser.highPriorityKeywords ? dbUser.highPriorityKeywords.join(', ') : 'interview, internship, test, deadline, exam');
+        }
+      } catch (err) {
+        console.error("Failed to load connection status", err);
+      }
+    };
+    checkConnection();
+
+    // Check callback URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    const message = params.get('message');
+
+    if (status === 'success') {
+      setGoogleCalendarConnected(true);
+      setGmailConnected(true);
+      setAlertMsg("Successfully connected to Google Workspace!");
+      setAlertType('success');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (status === 'error') {
+      setAlertMsg(message || "Failed to connect to Google Workspace.");
+      setAlertType('error');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const handleUpdatePreference = async (field, value) => {
+    try {
+      if (field === 'syncOnLoad') setSyncOnLoad(value);
+      if (field === 'emailAlerts') setEmailAlerts(value);
+      if (field === 'focusBufferMinutes') setFocusBufferMinutes(value);
+      if (field === 'highPriorityKeywords') setHighPriorityKeywords(value);
+
+      const payloadValue = field === 'highPriorityKeywords'
+        ? value.split(',').map(s => s.trim()).filter(Boolean)
+        : value;
+
+      await api.put('/auth/preferences', { [field]: payloadValue });
+    } catch (e) {
+      console.error("Failed to save preference adjustments", e);
+    }
   };
 
-  const handleToggleGmail = () => {
-    setGmailConnected(!gmailConnected);
+  const handleConnectGoogle = async () => {
+    try {
+      const response = await api.get('/auth/google');
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (e) {
+      console.error("Failed to generate Google Auth URL", e);
+      setAlertMsg("Error generating Google Auth Link: " + (e.response?.data?.message || e.message));
+      setAlertType('error');
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    try {
+      await api.post('/auth/google/disconnect');
+      setGoogleCalendarConnected(false);
+      setGmailConnected(false);
+      setAlertMsg("Google workspace disconnected successfully.");
+      setAlertType('success');
+    } catch (e) {
+      console.error("Failed to disconnect Google", e);
+      setAlertMsg("Error disconnecting Google: " + (e.response?.data?.message || e.message));
+      setAlertType('error');
+    }
   };
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
+      {/* Alert Banner */}
+      {alertMsg && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between shadow-sm animate-in fade-in duration-200 ${
+          alertType === 'success' 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : 'bg-rose-50 border-rose-255 text-rose-800'
+        }`}>
+          <div className="flex items-center gap-2.5 text-xs font-semibold">
+            <span className="text-base">{alertType === 'success' ? '✅' : '❌'}</span>
+            <span>{alertMsg}</span>
+          </div>
+          <button 
+            onClick={() => setAlertMsg(null)}
+            className="text-[10px] uppercase font-bold text-slate-450 hover:text-slate-700 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Header Panel */}
       <div>
         <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
@@ -93,8 +204,8 @@ const Settings = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={handleToggleCalendar}
-                  className={`px-3 py-1 rounded text-[10px] font-extrabold uppercase transition border ${
+                  onClick={googleCalendarConnected ? handleDisconnectGoogle : handleConnectGoogle}
+                  className={`px-3 py-1 rounded text-[10px] font-extrabold uppercase transition border cursor-pointer ${
                     googleCalendarConnected 
                       ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
                       : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
@@ -116,8 +227,8 @@ const Settings = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={handleToggleGmail}
-                  className={`px-3 py-1 rounded text-[10px] font-extrabold uppercase transition border ${
+                  onClick={gmailConnected ? handleDisconnectGoogle : handleConnectGoogle}
+                  className={`px-3 py-1 rounded text-[10px] font-extrabold uppercase transition border cursor-pointer ${
                     gmailConnected 
                       ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
                       : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
@@ -145,7 +256,7 @@ const Settings = () => {
                 <input 
                   type="checkbox"
                   checked={syncOnLoad}
-                  onChange={(e) => setSyncOnLoad(e.target.checked)}
+                  onChange={(e) => handleUpdatePreference('syncOnLoad', e.target.checked)}
                   className="h-4 w-4 rounded bg-white border-slate-200 border text-primary focus:ring-primary"
                 />
               </div>
@@ -158,7 +269,7 @@ const Settings = () => {
                 <input 
                   type="checkbox"
                   checked={emailAlerts}
-                  onChange={(e) => setEmailAlerts(e.target.checked)}
+                  onChange={(e) => handleUpdatePreference('emailAlerts', e.target.checked)}
                   className="h-4 w-4 rounded bg-white border-slate-200 border text-primary focus:ring-primary"
                 />
               </div>
@@ -170,7 +281,7 @@ const Settings = () => {
                 </div>
                 <select 
                   value={focusBufferMinutes}
-                  onChange={(e) => setFocusBufferMinutes(Number(e.target.value))}
+                  onChange={(e) => handleUpdatePreference('focusBufferMinutes', Number(e.target.value))}
                   className="px-2.5 py-1.5 rounded bg-white border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-primary shadow-sm"
                 >
                   <option value="15">15 minutes</option>
@@ -178,6 +289,21 @@ const Settings = () => {
                   <option value="45">45 minutes</option>
                   <option value="60">60 minutes</option>
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
+                <div className="text-xs">
+                  <p className="font-bold text-slate-800">Custom Priority Keywords</p>
+                  <p className="text-slate-400 font-semibold">Comma-separated list of words to prioritize in email scans</p>
+                </div>
+                <input 
+                  type="text"
+                  value={highPriorityKeywords}
+                  onChange={(e) => setHighPriorityKeywords(e.target.value)}
+                  onBlur={(e) => handleUpdatePreference('highPriorityKeywords', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-800 text-xs focus:border-primary focus:outline-none transition shadow-sm"
+                  placeholder="e.g. assignment, test, invoice"
+                />
               </div>
             </div>
           </div>

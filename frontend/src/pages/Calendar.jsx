@@ -100,6 +100,20 @@ const Calendar = () => {
     }, 1200);
   };
 
+  const handleApplyCalendarFixes = async () => {
+    const changes = aiData?.negotiation?.changes || [
+      "Move review assessment session to the evening (20:00 - 22:00) to free up some time.",
+      "Take a 30-minute break after the group project meeting."
+    ];
+    try {
+      const response = await api.post('/ai/apply-fixes', { changes });
+      alert(response.data.message || 'Optimizations pushed successfully to Google Calendar!');
+    } catch (err) {
+      console.error("Failed to apply schedule fixes", err);
+      alert("Error pushing adjustments: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   // Combine calendar events and tasks dynamically
   const calendarBlocks = [
     ...calendarEvents.map((event, index) => ({
@@ -108,17 +122,56 @@ const Calendar = () => {
       time: formatTimeRange(event.start, event.end),
       duration: calculateDuration(event.start, event.end),
       type: 'event',
-      conflict: false
+      conflict: false,
+      startTimeMs: event.start ? new Date(event.start).getTime() : 0
     })),
-    ...dbTasks.map((task) => ({
-      id: `task-${task._id}`,
-      title: task.title,
-      time: `Deadline: ${task.deadline}`,
-      duration: `${task.estimated_hours}h`,
-      type: task.priority || 'medium',
-      conflict: false
-    }))
-  ];
+    ...dbTasks.map((task, idx) => {
+      const hasScheduledTime = !!task.scheduledStart;
+      let timeText = `Deadline: ${task.deadline}`;
+      let sortTime = Infinity;
+
+      if (hasScheduledTime) {
+        try {
+          const start = new Date(task.scheduledStart);
+          const end = new Date(task.scheduledEnd);
+          const timeOptions = { hour: '2-digit', minute: '2-digit' };
+          const dateOptions = { month: 'short', day: 'numeric' };
+          
+          timeText = `${start.toLocaleTimeString([], timeOptions)} - ${end.toLocaleTimeString([], timeOptions)} (${start.toLocaleDateString([], dateOptions)})`;
+          sortTime = start.getTime();
+        } catch (e) {
+          console.error("Error formatting task schedule times", e);
+        }
+      } else {
+        // Fallback sequential timeline scheduling starting at 9:00 AM today
+        try {
+          const start = new Date();
+          const startHour = 9 + idx;
+          start.setHours(startHour, 0, 0, 0);
+          
+          const end = new Date(start);
+          const duration = task.estimated_hours || 1;
+          end.setHours(startHour + duration, 0, 0, 0);
+
+          const timeOptions = { hour: '2-digit', minute: '2-digit' };
+          timeText = `${start.toLocaleTimeString([], timeOptions)} - ${end.toLocaleTimeString([], timeOptions)} (Today)`;
+          sortTime = start.getTime();
+        } catch (e) {
+          console.error("Error creating dynamic fallback timing", e);
+        }
+      }
+
+      return {
+        id: `task-${task._id}`,
+        title: task.title,
+        time: timeText,
+        duration: `${task.estimated_hours}h`,
+        type: task.priority || 'medium',
+        conflict: false,
+        startTimeMs: sortTime
+      };
+    })
+  ].sort((a, b) => a.startTimeMs - b.startTimeMs);
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
@@ -252,8 +305,8 @@ const Calendar = () => {
             )}
 
             <button 
-              onClick={() => alert('Calendar optimized successfully!')}
-              className="w-full mt-4 py-2.5 px-4 rounded-lg bg-primary hover:bg-blue-600 font-semibold text-xs text-white shadow-sm transition flex items-center justify-center gap-1.5"
+              onClick={handleApplyCalendarFixes}
+              className="w-full mt-4 py-2.5 px-4 rounded-lg bg-primary hover:bg-blue-600 font-semibold text-xs text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <CheckCircle className="h-4 w-4" />
               <span>Apply AI Schedule Fixes</span>

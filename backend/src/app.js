@@ -5,6 +5,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const memoryRoutes = require('./routes/memoryRoutes');
+const goalRoutes = require('./routes/goalRoutes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/memory', memoryRoutes);
+app.use('/api/goals', goalRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -20,6 +20,22 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  syncOnLoad: {
+    type: Boolean,
+    default: true
+  },
+  emailAlerts: {
+    type: Boolean,
+    default: false
+  },
+  focusBufferMinutes: {
+    type: Number,
+    default: 30
+  },
+  highPriorityKeywords: {
+    type: [String],
+    default: ['interview', 'internship', 'test', 'deadline', 'exam']
+  },
   createdAt: {
     type: Date,
     default: Date.now

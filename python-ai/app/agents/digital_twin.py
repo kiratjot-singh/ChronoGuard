@@ -12,7 +12,7 @@ def digital_twin_agent(state):
     prompt = f"""
 You are ChronoGuard's Digital Twin Agent.
 
-Your responsibility is to build a behavioural profile of the user based on their current history and historical memory statistics.
+Your responsibility is to build a behavioural profile of the user based on their current history, historical memory statistics, and recent inbox emails.
 
 Historical Memory Profile:
 {state.get("memory", {})}
@@ -20,12 +20,16 @@ Historical Memory Profile:
 Current User History:
 {state["history"]}
 
+Recent User Inbox Emails:
+{state.get("emails", [])}
+
 Analyze and determine:
 1. Focus score (0-100)
 2. Procrastination score (0-100)
 3. Completion rate (0-100)
 4. Preferred work hours
 5. Procrastination patterns (e.g. "morning procrastination", "gym avoidance")
+6. Loss prevention advice: Read the recent user emails deeply. Identify critical professional, financial, or personal risks (such as unpaid invoices, security warnings, critical interview requests, exam test links, or expiring authorizations) that if missed or delayed would result in a significant loss or negative outcome for the user. Summarize these important points clearly and provide specific feedbacks and actionable advice to mitigate these risks.
 
 Think carefully before answering.
 """
@@ -38,6 +42,7 @@ Think carefully before answering.
         "completion_rate": result.completion_rate,
         "preferred_work_hours": result.preferred_work_hours,
         "procrastination_patterns": result.procrastination_patterns,
+        "loss_prevention_advice": result.loss_prevention_advice,
     }
 
     add_reasoning(

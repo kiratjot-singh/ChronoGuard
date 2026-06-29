@@ -23,9 +23,21 @@ const memorySchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  lossPreventionAdvice: {
+    type: String,
+    default: ""
+  },
   observationsCount: {
     type: Number,
     default: 0
+  },
+  learningInsights: {
+    type: [String],
+    default: []
+  },
+  aiSummary: {
+    type: String,
+    default: ""
   },
   updatedAt: {
     type: Date,

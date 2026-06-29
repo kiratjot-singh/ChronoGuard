@@ -13,33 +13,36 @@ class EventScheduler:
 
     def __init__(self, interval_seconds: float = 30.0):
         self.interval_seconds = interval_seconds
-        self._running = False
+        self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
 
     def start(self) -> None:
         """Start the background scheduler thread."""
-        if self._running:
+        if self._thread and self._thread.is_alive():
             return
-        self._running = True
+        self._stop_event.clear()
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
         logger.info(f"EventScheduler started with polling interval {self.interval_seconds}s.")
 
     def stop(self) -> None:
         """Stop the background scheduler thread."""
-        self._running = False
+        self._stop_event.set()
         if self._thread:
             self._thread.join(timeout=1.0)
             logger.info("EventScheduler stopped.")
 
     def _run_loop(self) -> None:
         """Internal polling loop."""
-        while self._running:
+        while not self._stop_event.is_set():
             try:
                 self._poll_for_events()
             except Exception as e:
                 logger.error(f"Error in EventScheduler polling loop: {e}", exc_info=True)
-            time.sleep(self.interval_seconds)
+            
+            # Wait on stop_event; if set, returns True immediately, breaking the loop.
+            if self._stop_event.wait(timeout=self.interval_seconds):
+                break
 
     def _poll_for_events(self) -> None:
         """Polls external mock systems (or triggers checks) for changes."""

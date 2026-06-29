@@ -8,9 +8,12 @@ import Welcome from './pages/Welcome';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
+import Goals from './pages/Goals';
 import Memory from './pages/Memory';
 import Settings from './pages/Settings';
+import ScheduleReview from './pages/ScheduleReview';
 import { Sparkles } from 'lucide-react';
+
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
@@ -81,8 +84,10 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/goals" element={<Goals />} />
           <Route path="/memory" element={<Memory />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/schedule-review" element={<ScheduleReview />} />
         </Route>
 
         {/* Wildcard Fallback */}

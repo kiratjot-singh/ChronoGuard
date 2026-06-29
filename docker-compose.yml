@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Standalone MongoDB database container
+  mongodb:
+    image: mongo:6.0
+    container_name: chronoguard-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: always
+
+  # Python FastAPI AI service
+  python-ai:
+    build: ./python-ai
+    container_name: chronoguard-python-ai
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./python-ai/.env
+    environment:
+      - TZ=Asia/Kolkata
+    restart: always
+
+  # Node.js backend service
+  backend:
+    build: ./backend
+    container_name: chronoguard-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Use the local MongoDB container inside the network
+      # (If you want to use MongoDB Atlas instead, comment out this line so it uses MONGODB_URI from ./backend/.env)
+      - MONGODB_URI=mongodb://mongodb:27017/chronoguard
+      # Point backend to the internal docker address of the python-ai container
+      - PYTHON_AI_URL=http://python-ai:8000/analyze
+      - TZ=Asia/Kolkata
+    depends_on:
+      - mongodb
+      - python-ai
+    restart: always
+
+  # React / Nginx frontend serving service
+  frontend:
+    build: ./frontend
+    container_name: chronoguard-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  mongodb_data:

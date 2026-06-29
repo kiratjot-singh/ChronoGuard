@@ -22,3 +22,13 @@ class ChronoState(TypedDict):
     negotiation: dict
 
     reasoning: list
+
+    executive_brief: str
+
+    decision_engine: dict
+
+    chief_of_staff: dict
+
+    learning_profile: dict
+
+    calendar_diff: dict

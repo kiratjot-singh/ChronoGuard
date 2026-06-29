@@ -76,7 +76,7 @@ exports.getCalendarEvents = async (userId) => {
 /**
  * Service to fetch user's Gmail emails/tasks.
  */
-exports.getGmailTasks = async (userId) => {
+exports.getGmailTasks = async (userId, calendarEvents = []) => {
   const connection = await Connection.findOne({ user: userId });
   if (!connection) {
     logger.info(`Gmail is not connected for user ${userId}. Returning empty tasks.`);
@@ -90,7 +90,7 @@ exports.getGmailTasks = async (userId) => {
     const listResponse = await axios.get('https://gmail.googleapis.com/gmail/v1/users/me/messages', {
       headers: { Authorization: `Bearer ${token}` },
       params: {
-        maxResults: 5,
+        maxResults: 20,
         q: 'is:inbox'
       }
     });
@@ -126,15 +126,91 @@ exports.getGmailTasks = async (userId) => {
     }
 
     // 2. Send raw emails to the Python AI service to extract tasks
+    const User = require('../models/User');
+    const user = await User.findById(userId);
+    const highPriorityKeywords = user?.highPriorityKeywords || ['interview', 'internship', 'test', 'deadline', 'exam'];
+
     const pythonAiUrl = process.env.PYTHON_AI_URL || 'http://127.0.0.1:8000';
     const extractUrl = `${pythonAiUrl.replace('/analyze', '')}/extract_tasks`;
 
     logger.info(`Sending ${rawEmails.length} emails to Python service for task extraction...`);
-    const extractResponse = await axios.post(extractUrl, { emails: rawEmails });
+    const extractResponse = await axios.post(extractUrl, { 
+      emails: rawEmails,
+      high_priority_keywords: highPriorityKeywords,
+      calendar_events: calendarEvents
+    });
 
     return extractResponse.data.tasks || [];
   } catch (error) {
     const errMsg = error.response?.data?.error?.message || error.message;
     throw new Error(`Gmail API Error: ${errMsg}`);
+  }
+};
+
+/**
+ * Create a new event on primary Google Calendar.
+ */
+exports.createCalendarEvent = async (userId, eventDetails) => {
+  const connection = await Connection.findOne({ user: userId });
+  if (!connection) {
+    throw new Error("Google Calendar is not connected.");
+  }
+
+  const token = await refreshAccessToken(connection);
+
+  try {
+    const response = await axios.post(
+      'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+      eventDetails,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    const errMsg = error.response?.data?.error?.message || error.message;
+    throw new Error(`Google Calendar Event Creation Failed: ${errMsg}`);
+  }
+};
+
+/**
+ * Fetch recent raw email headers and snippets for deep AI analysis.
+ */
+exports.getRecentEmails = async (userId) => {
+  const connection = await Connection.findOne({ user: userId });
+  if (!connection) {
+    logger.info(`Gmail is not connected for user ${userId}. Returning empty emails.`);
+    return [];
+  }
+
+  const token = await refreshAccessToken(connection);
+
+  try {
+    const listResponse = await axios.get('https://gmail.googleapis.com/gmail/v1/users/me/messages', {
+      headers: { Authorization: `Bearer ${token}` },
+      params: {
+        maxResults: 15,
+        q: 'is:inbox'
+      }
+    });
+
+    const messages = listResponse.data.messages || [];
+    const rawEmails = [];
+
+    for (const msg of messages) {
+      const msgResponse = await axios.get(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const headers = msgResponse.data.payload.headers || [];
+      const subject = headers.find(h => h.name.toLowerCase() === 'subject')?.value || 'No Subject';
+      const sender = headers.find(h => h.name.toLowerCase() === 'from')?.value || 'Unknown Sender';
+      const snippet = msgResponse.data.snippet || '';
+
+      rawEmails.push({ subject, sender, body: snippet });
+    }
+
+    return rawEmails;
+  } catch (error) {
+    logger.error(`Error retrieving raw emails for analysis: ${error.message}`);
+    return [];
   }
 };

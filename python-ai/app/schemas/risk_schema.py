@@ -15,3 +15,13 @@ class RiskSchema(BaseModel):
     confidence: int
 
     reason: str
+
+    at_risk: str
+
+    why: str
+
+    what_happens: str
+
+    how_to_fix: str
+
+    human_summary: str

@@ -1,0 +1,40 @@
+[
+  {
+    "timestamp": 1782627526.522565,
+    "event_type": "Task Completed",
+    "details": {
+      "title": "Coding focus block",
+      "type": "technical"
+    }
+  },
+  {
+    "timestamp": 1782627526.5470037,
+    "event_type": "Task Completed",
+    "details": {
+      "title": "DSA practice",
+      "type": "technical"
+    }
+  },
+  {
+    "timestamp": 1782627526.5589314,
+    "event_type": "Task Delayed",
+    "details": {
+      "title": "Documentation report",
+      "type": "admin"
+    }
+  },
+  {
+    "timestamp": 1782627526.5731893,
+    "event_type": "Recommendation Accepted",
+    "details": {
+      "task_title": "DSA practice"
+    }
+  },
+  {
+    "timestamp": 1782627526.5867474,
+    "event_type": "Recommendation Accepted",
+    "details": {
+      "task_title": "Coding focus block"
+    }
+  }
+]

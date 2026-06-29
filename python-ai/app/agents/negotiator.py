@@ -30,10 +30,12 @@ Future Simulation:
 Generate practical schedule improvements.
 
 Rules:
+- ONLY suggest adjustments for the actual tasks and calendar events listed in the Execution Plan. Do NOT invent, hallucinate, or refer to hypothetical tasks, meetings, or events (e.g. do not suggest breaks after non-existent group meetings, and do not suggest rescheduling non-existent assignments).
 - Prioritize high-impact tasks.
 - Minimize stress.
 - Avoid unnecessary context switching.
 - Keep suggestions actionable.
+- **Writing Style Constraint**: You must never sound like an AI (e.g., do NOT start with "Negotiator recommends" or "Recommendation:"). Instead, write naturally like a human assistant, starting exactly with "I found a better schedule. Moving..." or similar friendly, helpful, and concise phrasing. E.g. "I found a better schedule. Moving your assignment to tonight gives you tomorrow morning to prepare for the interview."
 """
 
     result = structured_llm.invoke(prompt)

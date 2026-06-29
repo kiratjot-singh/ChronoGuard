@@ -1,0 +1,21 @@
+{
+  "preferred_work_hours": [
+    "morning"
+  ],
+  "preferred_study_duration": 2.0,
+  "max_continuous_work": 4.0,
+  "preferred_break_length": 0.5,
+  "preferred_focus_blocks": [
+    "9 PM - 11 PM"
+  ],
+  "successful_strategies": [
+    "Rescheduling task blocks to late night"
+  ],
+  "rejected_strategies": [],
+  "ai_summary": "User prefers late morning sessions. Has completed 2 technical tasks. Accept rate is 100%.",
+  "insights": [
+    "Morning is your peak period for focus and task resolution.",
+    "Technical tasks (like coding) are completed 28% faster than documentation work.",
+    "You usually accept ChronoGuard's proactive calendar modifications."
+  ]
+}

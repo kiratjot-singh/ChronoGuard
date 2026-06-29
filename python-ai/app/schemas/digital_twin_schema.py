@@ -13,6 +13,8 @@ class DigitalTwinSchema(BaseModel):
 
     procrastination_patterns: list[str]
 
+    loss_prevention_advice: str
+
     confidence: int
 
     reasoning: str

@@ -14,6 +14,14 @@ Additionally, we improved credential verification error feedback and redesigned 
 - **[aiController.js](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/backend/src/controllers/aiController.js)**:
   - Automatically saves the AI-generated behavioral profile (focus score, work hours, procrastination patterns) into the MongoDB `Memory` collection upon running the workload analysis.
   - Catch block updated to inspect if the failure was an HTTP 429 rate limit from the Python FastAPI server and forward that exact code and message to the React client.
+  - Added case-insensitive duplicate check queries for tasks parsed from Gmail and Google Calendar, plus an automatic database deduplication cleanup block for existing pending tasks during analysis.
+  - Saves the Negotiation Agent's suggested schedule improvements as MongoDB notifications.
+  - Optimized the `/apply-schedule` logic to clear old ChronoGuard calendar events first to prevent duplicates, adjust matching tasks' database times, and schedule ONLY actual database tasks as calendar events instead of creating events for recommendation sentences.
+- **[notificationRoutes.js](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/backend/src/routes/notificationRoutes.js)**:
+  - Added `PUT /read` route to handle marking all notifications as read, matching the React client's request pattern and fixing a MongoDB CastError.
+- **[notificationController.js](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/backend/src/controllers/notificationController.js)**:
+  - Implemented the `markAllAsRead` controller method.
+  - Implemented dynamic deadline checking: scans pending tasks for deadlines today/tomorrow and dynamically creates warning alerts.
 - **[memoryController.js](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/backend/src/controllers/memoryController.js)**:
   - Configured the `/memory` endpoint to dynamically calculate task completion rate based on real user database tasks, rather than returning hardcoded statistics.
 
@@ -23,6 +31,13 @@ Additionally, we improved credential verification error feedback and redesigned 
   - Configured model call options to include `max_retries=6` for automatic exponential backoff retry on transient 429s.
 - **[routes.py](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/python-ai/app/api/routes.py)**:
   - Wrapped `execute_workflow` in a try-catch block to detect `RESOURCE_EXHAUSTED` / `429` errors and raise a clean FastAPI `HTTPException` with status code `429`.
+  - Pass `calendar_events` directly as `None` if omitted (instead of defaulting to `[]`), allowing proper state detection in the LangGraph graph.
+- **[planner.py](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/python-ai/app/agents/planner.py)**:
+  - Refactored the `calendar_events` check to `if calendar_events is None:` to avoid triggering the local unauthenticated `calendar_tool` when Google Calendar is disconnected.
+- **[negotiator.py](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/python-ai/app/agents/negotiator.py)**:
+  - Added a strict rule to the Negotiation Agent prompt forbidding the AI from hallucinating or recommending improvements for non-existent/hypothetical tasks or meetings.
+- **[gmail_tool.py](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/python-ai/app/tools/gmail_tool.py)**:
+  - Dynamically calculates the current system date/time and relative date options in Python and inserts them into the email task extraction prompt, replacing hardcoded dates.
 
 ### 3. Frontend UI
 - **[Login.jsx](file:///c:/Users/kiratjot%20singh/OneDrive/Desktop/chronoGuard/frontend/src/pages/Login.jsx)**:
@@ -46,3 +61,5 @@ Additionally, we improved credential verification error feedback and redesigned 
    - Executed `node tests/ai.test.js` in the `backend` directory. All tests passed successfully.
 2. **FastAPI Server Running:**
    - Restarted `uvicorn` and verified it listens on `http://127.0.0.1:8000` with the updated configuration.
+3. **Uvicorn Reload Hang Fix:**
+   - Refactored `EventScheduler` in `python-ai/app/events/scheduler.py` to use a `threading.Event` instead of `time.sleep`, allowing the background thread to interrupt and exit immediately, preventing reload/shutdown hangs in uvicorn.

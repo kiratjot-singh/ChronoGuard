@@ -10,13 +10,17 @@ structured_llm = llm.with_structured_output(
 
 def planner_agent(state):
 
-    # Fetch real upcoming calendar events using the Calendar Tool
-    calendar_events = calendar_tool.invoke({"action": "read_events"})
+    # Fetch real upcoming calendar events using the Calendar Tool if not provided in request state
+    calendar_events = state.get("calendar_events")
+    if calendar_events is None:
+        calendar_events = calendar_tool.invoke({"action": "read_events"})
+
+    learning_profile = state.get("learning_profile", {})
 
     prompt = f"""
 You are ChronoGuard's Planner Agent.
 
-Your job is to convert high-level goals into clear, executable subtasks. You must keep the user's current Google Calendar availability in mind.
+Your job is to convert high-level goals into clear, executable subtasks, incorporating user behavioral preferences.
 
 Google Calendar Upcoming Busy Slots:
 {calendar_events}
@@ -24,17 +28,24 @@ Google Calendar Upcoming Busy Slots:
 Tasks:
 {state["tasks"]}
 
+User Learning Profile & Preferences:
+- Preferred focus periods: {learning_profile.get("preferred_work_hours", ["night"])}
+- Preferred focus blocks: {learning_profile.get("preferred_focus_blocks", [])}
+- Max continuous focus block: {learning_profile.get("max_continuous_work", 4.0)} hours
+
 Rules:
 - Break each task into small actionable steps.
 - Order them logically.
-- Do not create a schedule.
+- Recommend target start windows aligned with their preferred work hours (e.g., if night is preferred, suggest late evening slots like 9 PM instead of morning 8 AM).
+- Do not create a rigid hourly calendar schedule, but note focus slot recommendations.
 - Return concise subtasks.
 """
 
     result = structured_llm.invoke(prompt)
 
     state["plan"] = {
-        "subtasks": result.subtasks
+        "subtasks": result.subtasks,
+        "preferred_focus_blocks": learning_profile.get("preferred_focus_blocks", [])
     }
 
     add_reasoning(

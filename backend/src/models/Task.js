@@ -33,7 +33,39 @@ const taskSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  scheduledStart: {
+    type: Date
+  },
+  scheduledEnd: {
+    type: Date
+  },
+  specificDate: {
+    type: String
+  },
+  preferredStartTime: {
+    type: String
+  },
+  reason: {
+    type: String,
+    default: ""
+  },
+  calendarSource: {
+    type: String,
+    default: "Manual"
+  },
+  confidence: {
+    type: Number,
+    default: 100
+  },
+  detectedDate: {
+    type: Date,
+    default: Date.now
+  },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }

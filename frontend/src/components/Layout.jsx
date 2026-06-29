@@ -13,7 +13,8 @@ import {
   Bell, 
   Menu, 
   X,
-  Sparkles
+  Sparkles,
+  Trophy
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -50,6 +51,8 @@ const Layout = ({ children }) => {
     { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'To-Do List', path: '/tasks', icon: CheckSquare },
     { name: 'My Schedule', path: '/calendar', icon: Calendar },
+    { name: 'Plan Review Mode', path: '/schedule-review', icon: Sparkles },
+    { name: 'Goals & Habits', path: '/goals', icon: Trophy },
     { name: 'Helper Tips', path: '/memory', icon: BrainCircuit },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
@@ -167,6 +170,8 @@ const Layout = ({ children }) => {
               {location.pathname === '/' ? 'Home Overview' : 
                location.pathname === '/tasks' ? 'To-Do List' :
                location.pathname === '/calendar' ? 'My Schedule' :
+               location.pathname === '/schedule-review' ? 'AI Schedule Review' :
+               location.pathname === '/goals' ? 'Goals & Habit Tracking' :
                location.pathname === '/memory' ? 'Helper Tips & Insights' :
                location.pathname === '/settings' ? 'Settings' : 'Overview'}
             </span>

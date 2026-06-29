@@ -12,7 +12,7 @@ def simulator_agent(state):
     prompt = f"""
 You are ChronoGuard's Future Simulation Agent.
 
-Your responsibility is to predict possible future outcomes.
+Your responsibility is to predict possible future outcomes and compare scenarios.
 
 User Profile:
 {state["profile"]}
@@ -23,30 +23,30 @@ Execution Plan:
 Risk Analysis:
 {state["risk"]}
 
-Generate three future scenarios.
+Compare three plans:
+1. Current Plan (no modifications)
+2. AI Optimized Plan (applying suggestions)
+3. Aggressive Plan (maximizing tasks completed at the cost of buffer/stress)
 
-Future A
-Current behaviour.
-
-Future B
-Follow the AI recommendations.
-
-Future C
-Aggressive optimisation.
+For each plan, you must output a structured comparison with the following exact metrics:
+- Completion Rate (0-100%)
+- Stress Level (0-100%)
+- Sleep Hours (hours, e.g. 7.5)
+- Confidence (0-100%)
+- Time Remaining (hours left for leisure or deep focus)
+- description (under 60 words, realistic description of the daily outcome, no fantasy scenarios)
 
 Rules:
-
-- Be realistic.
-- Keep each future under 80 words.
-- Mention consequences.
+- Be realistic and conservative.
+- Align metrics with the risk analysis details.
 """
 
     result = structured_llm.invoke(prompt)
 
     state["simulation"] = {
-        "future_a": result.future_a,
-        "future_b": result.future_b,
-        "future_c": result.future_c,
+        "current_plan": result.current_plan.model_dump(),
+        "ai_optimized_plan": result.ai_optimized_plan.model_dump(),
+        "aggressive_plan": result.aggressive_plan.model_dump(),
     }
 
     add_reasoning(

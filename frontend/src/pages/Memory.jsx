@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 const Memory = () => {
-  const [showCharts, setShowCharts] = useState(false);
+  const [showCharts, setShowCharts] = useState(true);
   
   // Fetch historical cognitive averages
   const { data: memoryData, isLoading } = useQuery({
@@ -39,7 +39,7 @@ const Memory = () => {
     : [];
   const obsCount = memoryData?.observationsCount || 0;
 
-  const focusTrendData = [
+  const focusTrendData = memoryData?.focusTrendData || [
     { day: 'Mon', focus: averageFocusVal ? Math.round(averageFocusVal * 0.9) : 0 },
     { day: 'Tue', focus: averageFocusVal ? Math.round(averageFocusVal * 1.0) : 0 },
     { day: 'Wed', focus: averageFocusVal ? Math.round(averageFocusVal * 0.95) : 0 },
@@ -49,7 +49,7 @@ const Memory = () => {
     { day: 'Sun', focus: averageFocusVal },
   ];
 
-  const hourlyFocusData = [
+  const hourlyFocusData = memoryData?.hourlyFocusData || [
     { hour: '09:00', efficiency: preferredHours.includes('09:00') ? 95 : 50 },
     { hour: '11:00', efficiency: preferredHours.includes('11:00') ? 95 : 50 },
     { hour: '13:00', efficiency: preferredHours.includes('13:00') ? 95 : 50 },
