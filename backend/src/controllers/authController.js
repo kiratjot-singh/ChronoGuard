@@ -126,9 +126,10 @@ exports.googleAuth = (req, res) => {
 // Handle Google OAuth Callback (code exchange)
 exports.googleCallback = async (req, res) => {
   const { code, state: userId } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
   if (!code || !userId) {
-    return res.redirect("http://localhost:3000/settings?status=error&message=Missing+code+or+user+id");
+    return res.redirect(`${frontendUrl}/settings?status=error&message=Missing+code+or+user+id`);
   }
 
   try {
@@ -162,11 +163,11 @@ exports.googleCallback = async (req, res) => {
 
     await User.findByIdAndUpdate(userId, { googleConnected: true });
 
-    return res.redirect("http://localhost:3000/settings?status=success");
+    return res.redirect(`${frontendUrl}/settings?status=success`);
   } catch (error) {
     console.error("Google OAuth Exchange Error:", error.response?.data || error.message);
     const errDetails = error.response?.data?.error_description || error.message;
-    return res.redirect(`http://localhost:3000/settings?status=error&message=${encodeURIComponent(errDetails)}`);
+    return res.redirect(`${frontendUrl}/settings?status=error&message=${encodeURIComponent(errDetails)}`);
   }
 };
 
